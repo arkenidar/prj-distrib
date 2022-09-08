@@ -2,22 +2,19 @@ package com.arkenidar;
 
 import com.arkenidar.products.Product;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.List;
 
 public class DistributoreDiBevande {
 
-    private final int limit; // quantity limit
-    private Map<String, Integer> quantities; // quantities by id
+    private final int quantityLimit;
+    private final List<Product> products;
     private double balance;
 
-    private Map<String, Double> costs; // costs by id
-
     DistributoreDiBevande(int capacity) {
-        quantities = new HashMap<String, Integer>();
-        costs = new HashMap<String, Double>();
-        limit = capacity;
+        products = new LinkedList<>();
         balance = 0;
+        quantityLimit = capacity;
     }
 
     public double saldoAttuale() {
@@ -38,59 +35,56 @@ public class DistributoreDiBevande {
         return change;
     }
 
-    public void caricaProdotto(Product product) {
-        if (usedCapacity() >= limit) {
+    public boolean caricaProdotto(Product product) {
+        if (usedCapacity() >= quantityLimit) {
             System.out.println("errore: capacità limite raggiunta!");
-            return;
+            return false;
         }
 
-        Integer quantity = quantities.get(product.getId());
-        if (quantity == null) quantity = 0;
-        quantities.put(product.getId(), quantity + 1);
+        products.add(product);
 
-        costs.put(product.getId(), product.getCost());
-
-        if (usedCapacity() >= limit) {
+        if (usedCapacity() >= quantityLimit) {
             System.out.println("errore: capacità limite raggiunta!");
-            return;
         }
+
+        return true;
     }
 
     public Product scegliProdotto(String id) {
-        Integer quantity = quantities.get(id);
-        if (quantity <= 0) {
+        Product product;
+
+        product = products.stream().filter(curProd -> curProd.getId().equals(id)).findFirst().orElse(null);
+
+        if (product == null) {
             System.out.println("errore: quantità prodotto uguale a zero");
             return null;
         }
-        Double cost = costs.get(id);
-        if (cost == null) {
-            System.out.println("errore: costo inesistente nell'elenco costi");
-            return null;
-        }
+
+        double cost = product.getCost();
+
         double newBalance = balance - cost;
         if (newBalance < 0) {
             System.out.println("errore: costi non coperti dal denaro immesso");
             return null;
         }
         balance = newBalance;
-        quantities.put(id, quantity - 1);
 
-        return new Product(id, costs.get(id));
+        products.remove(product);
+
+        return product;
     }
 
     @Override
     public String toString() {
-        String description = "contenuto: { ";
-        for (Map.Entry<String, Integer> entry : quantities.entrySet()) {
-            String part = entry.getKey() + ":" + entry.getValue();
-            description += part + ", ";
+        StringBuilder description = new StringBuilder("contenuto: { ");
+        for (Product curProd : products) {
+            description.append(curProd).append(", ");
         }
-        description += "}";
-        return description;
+        description.append("}");
+        return description.toString();
     }
 
     public int usedCapacity() {
-        int sum = quantities.values().stream().mapToInt(i -> i).sum();
-        return sum;
+        return products.size();
     }
 }

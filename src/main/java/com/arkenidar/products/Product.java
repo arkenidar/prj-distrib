@@ -1,6 +1,6 @@
 package com.arkenidar.products;
 
-public class Product {
+public abstract class Product {
     private final String id;
     private final double cost;
 
@@ -15,5 +15,10 @@ public class Product {
 
     public double getCost() {
         return cost;
+    }
+
+    @Override
+    public String toString() {
+        return id + ":" + cost;
     }
 }
